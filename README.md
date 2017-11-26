@@ -1,6 +1,16 @@
 # ExMiner
 
-**TODO: Add description**
+A dummy data clustering tool using explot.
+
+Read more on [explot](https://github.com/JordiPolo/explot) if you don't have python3/matplotlib installed.
+
+## Usage
+
+To make two kmean clusters on a set of points [{1, 4}, {3, 5}, {6, 7}, {4, 6}], do:
+
+```elixir
+ExMiner.kmean([{1, 4}, {3, 5}, {6, 7}, {4, 6}])
+```
 
 ## Installation
 
