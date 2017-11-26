@@ -2,15 +2,62 @@ defmodule ExMiner do
   @moduledoc """
   Documentation for ExMiner.
   """
-  def plot(values, options\\%{}) do
-    plot = Explot.new
+  use GenServer
+  alias ExMiner.Kmean
+
+  def start(_type, _args), do: __MODULE__.start_link()
+
+  def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
+
+  def init([]) do
+    pid = Explot.new
+    {:ok, pid}
+  end
+
+  def plot(values, opts\\nil) do
+    :ok = GenServer.call(__MODULE__, {:plot, values, opts})
+    GenServer.call(__MODULE__, :show)
+  end
+
+  def kmean(cluster, opts\\nil) do
+    :kmean = GenServer.call(__MODULE__, {:plot, cluster, :kmean, opts})
+    GenServer.call(__MODULE__, :show)
+  end
+
+  # def plot(values, :kmean, options\\%{}) do
+  #   options =
+  # end
+
+  def handle_call({:plot, values, opts}, _from, pid) do
+    plot = plotted?(pid)
+    do_plot(values, plot)
+    {:reply, :ok, plot}
+  end
+
+  def handle_call({:plot, cluster, :kmean, opts}, _from, pid) do
+    plot = plotted?(pid)
+    kmean = Kmean.process(cluster)
+    do_plot(kmean.group_a, plot, %{color: 'ro'})
+    do_plot(kmean.group_b, plot, %{color: 'bo'})
+    {:reply, :kmean, plot}
+  end
+
+  def handle_call(:show, _from, pid) do
+    plot = plotted?(pid)
+    Explot.show(plot)
+    {:reply, :ok, nil}
+  end
+
+  defp plotted?(nil), do: Explot.new
+  defp plotted?(pid), do: pid
+
+  defp do_plot(values, plot, options\\%{}) do
     {x_list, y_list} = values
                        |> Enum.reduce({[],[]},
                             fn({x, y}, {xs, ys}) ->
                                   {[x|xs], [y|ys]} end)
     color = options |> Map.get(:color, 'ro')
     Explot.plot_command(plot, "plot(#{inspect x_list},#{inspect y_list},'#{color}')")
-    Explot.show(plot)
   end
 
 end
