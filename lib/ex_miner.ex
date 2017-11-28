@@ -20,8 +20,8 @@ defmodule ExMiner do
   end
 
   def kmean(cluster, opts\\nil) do
-    :kmean = GenServer.call(__MODULE__, {:plot, cluster, :kmean, opts})
-    GenServer.call(__MODULE__, :show)
+    :kmean = GenServer.call(__MODULE__, {:plot, cluster, :kmean, opts}, 30_000)
+    GenServer.call(__MODULE__, :show, :infinity)
   end
 
   # def plot(values, :kmean, options\\%{}) do
@@ -44,6 +44,8 @@ defmodule ExMiner do
 
   def handle_call(:show, _from, pid) do
     plot = plotted?(pid)
+    Explot.xlabel(pid, "x")
+    Explot.ylabel(pid, "y")
     Explot.show(plot)
     {:reply, :ok, nil}
   end
@@ -57,7 +59,9 @@ defmodule ExMiner do
                             fn({x, y}, {xs, ys}) ->
                                   {[x|xs], [y|ys]} end)
     color = options |> Map.get(:color, 'ro')
-    Explot.plot_command(plot, "plot(#{inspect x_list},#{inspect y_list},'#{color}')")
+    command = "plot([" <> Enum.join(x_list, ",") <> "],[" <> Enum.join(y_list, ",") <> "],'#{color}')"
+    IO.puts command
+    Explot.plot_command(plot, command)
   end
 
 end

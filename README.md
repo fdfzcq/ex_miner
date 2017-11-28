@@ -11,6 +11,15 @@ To make two kmean clusters on a set of points [{1, 4}, {3, 5}, {6, 7}, {4, 6}], 
 ```elixir
 ExMiner.kmean([{1, 4}, {3, 5}, {6, 7}, {4, 6}])
 ```
+Or
+
+```elixir
+list = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
+ExMiner.kmean(list)
+
+Sample output:
+![Sample](sample.png?raw=true "plot")
+```
 
 ## Installation
 
