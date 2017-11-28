@@ -16,10 +16,12 @@ Or
 ```elixir
 list = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
 ExMiner.kmean(list)
+```
 
 Sample output:
-![Sample](sample.png?raw=true "plot")
-```
+
+![](sample.png?raw=true "sample")
+
 
 ## Installation
 
