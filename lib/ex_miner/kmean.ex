@@ -4,7 +4,6 @@ defmodule ExMiner.Kmean do
     dist: 0.0,
     cluster: [],
     centroids: nil,
-    old_centroids: nil,
     group_a: [],
     group_b: []
     )
@@ -15,7 +14,7 @@ defmodule ExMiner.Kmean do
     |> init_centroids?(opts)
     #|> remove_centroids_from_cluster
     |> cluster
-    |> do_cluster
+    #|> do_cluster
   end
 
   defp init_state(cluster) do
@@ -49,10 +48,10 @@ defmodule ExMiner.Kmean do
   defp cluster(st) do
     cluster = st.cluster
     result = do_cluster(st)
-    case result.centroids == result.old_centroids do
+    case result.centroids == st.centroids do
       true -> IO.puts("Get final centroids #{inspect result.centroids}")
-              st
-      _false -> new_st = %{result|old_centroids: result.centroids, cluster: cluster}
+              result
+      _false -> new_st = %{result|cluster: cluster}
                 IO.puts("Reclustering ... ")
                 cluster(new_st)
     end
@@ -73,22 +72,23 @@ defmodule ExMiner.Kmean do
     dist_b = get_distance(h, p2)
     new_state =
       case dist_a < dist_b do
-        true -> %{state|cluster: t, group_a: [h|group_a]}
-        false -> %{state|cluster: t, group_b: [h|group_b]}
+        true -> %{state|cluster: t, group_a: [h|group_a], group_b: Enum.filter(group_b, &(&1 != h))}
+        false -> %{state|cluster: t, group_b: [h|group_b], group_a: Enum.filter(group_a, &(&1 != h))}
       end
     new_state
     |> recalculate_centroids
     |> do_cluster
   end
 
-  defp recalculate_centroids(state) do
+  defp recalculate_centroids(state = %{centroids: {c_a, c_b}}) do
     # TODO optimize algorithm here
-    centroids_a = state.group_a |> get_mean_point
-    centroids_b = state.group_b |> get_mean_point
+    centroids_a = state.group_a |> get_mean_point(c_a)
+    centroids_b = state.group_b |> get_mean_point(c_b)
     %{state|centroids: {centroids_a, centroids_b}}
   end
 
-  defp get_mean_point(group) do
+  defp get_mean_point([], c), do: c
+  defp get_mean_point(group, _) do
     n = Enum.count(group)
     {x_sum, y_sum} = group
                      |> Enum.reduce({0, 0},
