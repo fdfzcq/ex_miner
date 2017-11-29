@@ -4,15 +4,17 @@ defmodule ExMiner.Kmean do
     dist: 0.0,
     cluster: [],
     centroids: nil,
+    old_centroids: nil,
     group_a: [],
     group_b: []
     )
 
-  def process(cluster) do
+  def process(cluster, opts) do
     cluster
     |> init_state
-    |> init_centroids
-    |> remove_centroids_from_cluster
+    |> init_centroids?(opts)
+    #|> remove_centroids_from_cluster
+    |> cluster
     |> do_cluster
   end
 
@@ -22,7 +24,15 @@ defmodule ExMiner.Kmean do
     }
   end
 
-  defp init_centroids(st) do
+  defp init_centroids?(st, opts) do
+    case Map.get(opts, :init_centroids, nil) do
+      nil -> init_centroids(st, true)
+      centroids -> init_centroids(%{st|centroids: centroids}, false)
+    end
+  end
+
+  defp init_centroids(st, false), do: st
+  defp init_centroids(st, true) do
     st.cluster
     |> Enum.reduce(st, fn(point, state) ->
         p2 = state.cluster
@@ -34,6 +44,18 @@ defmodule ExMiner.Kmean do
           false -> state
         end
     end)
+  end
+
+  defp cluster(st) do
+    cluster = st.cluster
+    result = do_cluster(st)
+    case result.centroids == result.old_centroids do
+      true -> IO.puts("Get final centroids #{inspect result.centroids}")
+              st
+      _false -> new_st = %{result|old_centroids: result.centroids, cluster: cluster}
+                IO.puts("Reclustering ... ")
+                cluster(new_st)
+    end
   end
 
   defp remove_centroids_from_cluster(state) do
@@ -71,7 +93,7 @@ defmodule ExMiner.Kmean do
     {x_sum, y_sum} = group
                      |> Enum.reduce({0, 0},
                         fn({x, y}, {xs, ys}) -> {xs + x, ys + y} end)
-    {x_sum/n, y_sum/n}
+    {div(10 * x_sum, n)/10, div(10 * y_sum, n)/10}
   end
 
   defp get_distance({x1, y1}, {x2, y2}) do
