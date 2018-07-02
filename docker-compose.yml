@@ -1,0 +1,22 @@
+version: '2'
+networks:
+  ex_miner:
+    driver: bridge
+
+services:
+  rabbit:
+    image: rabbitmq:management-alpine
+    stdin_open: true
+    tty: true
+    #volumes:
+      # - ./xmq:/var/lib/rabbitmq:rw
+      # - ./xmq/definitions.json:/opt/definitions.json:ro
+      # - ./xmq/rabbitmq.config:/etc/rabbitmq/rabbitmq.config:ro
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      ex_miner:
+        aliases:
+          - rabbit
