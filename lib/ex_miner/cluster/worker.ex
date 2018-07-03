@@ -48,6 +48,8 @@ defmodule ExMiner.Cluster.Worker do
   end
   defp maybe_move_data(data, state, false) do
     GenServer.call(state.next_worker_name, {:take_over, data})
+    new_dataset = GenServer.call(Storage, {:get_all_with_key, [state.cluster_number]})
+    %{state|metadata: state.call_back_method.init_metadata(new_dataset)}
   end
 
   defp call_back_method(:kmean), do: Algo.Kmean
