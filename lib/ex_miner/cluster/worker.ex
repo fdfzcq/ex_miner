@@ -19,17 +19,35 @@ defmodule ExMiner.Cluster.Worker do
     {:ok, state}
   end
 
-  def handle_cast(:do_process, state) do
-    data = GenServer.call(Storage, {:get_first_with_key}, [state.cluster_number])
+  def handle_call(:do_process, state) do
+    data = GenServer.call(Storage, {:get_first_with_key, [state.cluster_number]})
     local_dist = state.call_back_method.distance_to_centroid(state)
     next_dist = GenServer.call(state.next_worker_name, {:calculate_dist, data})
+    new_state = maybe_move_data(data, state, local_dist < next_dist)
     # TBC
-    {:noreply, state}
+    {:reply, :ok, new_state}
+  end
+
+  def handle_call({:calculate_dist, data}, _from, state) do
+    dist = Algo.Kmean.get_distance(data, state.metadata.centroid)
+    {:reply, dist, state}
   end
 
   def handle_call(:init_cluster, _from, state) do
     dataset = GenServer.call(Storage, {:get_all_with_key, [state.cluster_number]})
     {:reply, :ok, %{state|metadata: state.call_back_method.init_metadata(dataset)}}
+  end
+
+  def handle_call({:take_over, data}, _from, state) do
+    #TODO
+  end
+
+  defp maybe_move_data(data, state, true) do
+    GenServer.call(Storage, {:move_to_last, [{data, state.cluster_number}]})
+    state
+  end
+  defp maybe_move_data(data, state, false) do
+    GenServer.call(state.next_worker_name, {:take_over, data})
   end
 
   defp call_back_method(:kmean), do: Algo.Kmean

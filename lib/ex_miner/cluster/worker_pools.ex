@@ -44,7 +44,7 @@ defmodule ExMiner.Cluster.WorkerRegistry do
 
   def start_process(algo) do
     init_key = 1
-    Registry.dispatch(algo, init_key, fn pid -> GenServer.cast(pid, :do_process) end)
+    Registry.dispatch(algo, init_key, fn pid -> GenServer.call(pid, :do_process) end)
   end
 
 end
