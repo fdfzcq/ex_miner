@@ -36,7 +36,6 @@ defmodule ExMiner.Cluster.WorkerRegistry do
     dataset
     |> Enum.with_index(dataset)
     |> Enum.map(fn({data, index}) -> {data, rem(index, n) + 1} end)
-    |> Enum.into(%{})
     |> ClusterStorage.start
   end
 

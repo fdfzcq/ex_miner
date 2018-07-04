@@ -25,7 +25,7 @@ defmodule ExMiner.Cluster.Storage do
   defp get_first_with_key([{data, key}|_], key, nil), do: data
   defp get_first_with_key([_|t], key, nil), do: get_first_with_key(t, key, nil)
 
-  def move_to_last(state, data), do: {Enum.into(move_to_last(state, data, [], false), %{}), state}
+  def move_to_last(state, data), do: {move_to_last(state, data, [], false), state}
   defp move_to_last([], data, new_list, true) do
     reversed = :lists.reverse(new_list)
     :lists.reverse([data|reversed])
@@ -33,4 +33,10 @@ defmodule ExMiner.Cluster.Storage do
   defp move_to_last([], data, new_list, false), do: new_list
   defp move_to_last([data|t], data, new_list, has_data?), do: move_to_last(t, data, new_list, true)
   defp move_to_last([v|t], data, new_list, has_data?), do: move_to_last(t, data, [v|new_list], has_data?)
+
+  def take_over(state, data, new_group), do: take_over(state, data, new_group, [])
+  defp take_over([], _data, _new_group, new_list), do: new_list
+  defp take_over([{data, _}|t], data, new_group, new_list), do:
+    take_over(t, data, new_group, [{data, new_group}|new_list])
+  defp take_over([h|t], data, new_group, new_list), do: take_over(t, data, new_group, [h|new_list])
 end

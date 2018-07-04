@@ -23,7 +23,7 @@ defmodule ExMiner.Cluster.Worker do
     data = GenServer.call(Storage, {:get_first_with_key, [state.cluster_number]})
     local_dist = state.call_back_method.distance_to_centroid(state)
     next_dist = GenServer.call(state.next_worker_name, {:calculate_dist, data})
-    new_state = maybe_move_data(data, state, local_dist < next_dist)
+    new_state = maybe_move_data(data, state, local_dist > next_dist)
     # TBC
     {:reply, :ok, new_state}
   end
@@ -39,14 +39,16 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   def handle_call({:take_over, data}, _from, state) do
-    #TODO
+    dataset = GenServer.call(Storage, {:take_over, [data, state.cluster_number]})
+    #TODO: compare and send this data further, or start a chain of activities
+    {:reply, :ok, %{state|metadata: state.call_back_method.init_metadata(dataset)}}
   end
 
-  defp maybe_move_data(data, state, true) do
+  defp maybe_move_data(data, state, false) do
     GenServer.call(Storage, {:move_to_last, [{data, state.cluster_number}]})
     state
   end
-  defp maybe_move_data(data, state, false) do
+  defp maybe_move_data(data, state, true) do
     GenServer.call(state.next_worker_name, {:take_over, data})
     new_dataset = GenServer.call(Storage, {:get_all_with_key, [state.cluster_number]})
     %{state|metadata: state.call_back_method.init_metadata(new_dataset)}
