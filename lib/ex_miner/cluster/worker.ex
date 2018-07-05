@@ -20,11 +20,10 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   def handle_cast(:do_process, state) do
-    data = GenServer.call(Storage, {:get_first_with_key, [state.cluster_number]})
-    local_dist = state.call_back_method.distance_to_centroid(state)
+    data = Storage.call(:get_first_with_key, [state.cluster_number])
+    local_dist = state.call_back_method.get_distance(data, state.metadata.centroid)
     next_dist = GenServer.call(state.next_worker_name, {:calculate_dist, data})
     new_state = maybe_move_data(data, state, local_dist > next_dist)
-    # TBC
     {:noreply, new_state}
   end
 
@@ -34,7 +33,7 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   def handle_call(:init_cluster, _from, state) do
-    dataset = GenServer.call(Storage, {:get_all_with_key, [state.cluster_number]})
+    dataset = Storage.call(:get_all_with_key, [state.cluster_number])
     {:reply, :ok, %{state|metadata: state.call_back_method.init_metadata(dataset)}}
   end
 
@@ -44,13 +43,12 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   defp maybe_move_data(data, state, false) do
-    GenServer.call(Storage, {:move_to_last, [{data, state.cluster_number}]})
+    Storage.call(:move_to_last, [{data, state.cluster_number}])
     state
   end
   defp maybe_move_data(data, state, true) do
     GenServer.call(state.next_worker_name, {:take_over, data})
-    GenServer.cast(state.next_worker_name, :do_process)
-    new_dataset = GenServer.call(Storage, {:get_all_with_key, [state.cluster_number]})
+    new_dataset = Storage.call(:get_all_with_key, [state.cluster_number])
     %{state|metadata: state.call_back_method.init_metadata(new_dataset)}
   end
 

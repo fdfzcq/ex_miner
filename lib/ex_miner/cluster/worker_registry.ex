@@ -12,7 +12,7 @@ defmodule ExMiner.Cluster.WorkerRegistry do
   end
 
   def spawn_cluster(no_of_clusters, algo), do: (1..no_of_clusters)
-    |> Enum.each(&start_cluster_worker(&1, &2, no_of_clusters))
+    |> Enum.each(&start_cluster_worker(&1, algo, no_of_clusters))
 
   defp start_cluster_worker(cluster_number, algo, no_of_clusters) do
     {:ok, pid} = GenServer.start_link(ClusterWorker, {algo, no_of_clusters, cluster_number},
@@ -29,21 +29,21 @@ defmodule ExMiner.Cluster.WorkerRegistry do
   end
 
   defp init_workers_with_data(key, algo) do
-    Registry.dispatch(algo, key, fn pid -> GenServer.call(pid, :init_cluster) end)
+    Registry.dispatch(algo, key, fn [{_, pid}] -> GenServer.call(pid, :init_cluster) end)
   end
 
   defp init_storage_with_data(dataset, n) do
     dataset
-    |> Enum.with_index(dataset)
+    |> Enum.with_index
     |> Enum.map(fn({data, index}) -> {data, rem(index, n) + 1} end)
     |> ClusterStorage.start
   end
 
   # TODO: calculation, cluster, store data, api round robin
+  def start_process(no_of_clusters, algo), do: (1..no_of_clusters) |> Enum.each(&process(algo, &1))
 
-  def start_process(algo) do
-    init_key = 1
-    Registry.dispatch(algo, init_key, fn pid -> GenServer.cast(pid, :do_process) end)
+  def process(algo, key) do
+    Registry.dispatch(algo, key, fn [{_, pid}] -> GenServer.cast(pid, :do_process) end)
   end
 
 end
