@@ -5,7 +5,22 @@ defmodule ExMiner do
   use GenServer
   alias ExMiner.Kmean
 
-  def start(_type, _args), do: __MODULE__.start_link()
+  @port 8080
+
+  def start(_type, _args) do
+    ranch_options = [{:port, @port}]
+
+    cowboy_options = %{
+      comress: true,
+      timeout: 30_000,
+    }
+
+    {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
+    #__MODULE__.start_link()
+  end
+
+
+  ##### deprecated
 
   def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
