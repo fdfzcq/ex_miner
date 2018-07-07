@@ -5,11 +5,7 @@ defmodule ExMiner.Algo.Kmean do
     centroid: nil
   )
 
-  def init_metadata(dataset) do
-    %__MODULE__{centroid: calculate_centroid(dataset)}
-  end
-
-  defp calculate_centroid(dataset) do
+  def calculate_centroid(dataset) do
     n = Enum.count(dataset)
     {x_sum, y_sum} = dataset
                      |> Enum.reduce({0, 0},

@@ -1,7 +1,5 @@
 defmodule ExMiner.Algo.Default do
   
-  def init_metadata(_dataset), do: %{}
-
-  def do_process(_), do: :ok
+  def get_distance(_), do: -1
   
 end

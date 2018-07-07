@@ -5,57 +5,68 @@ defmodule ExMiner.Cluster.Worker do
 
   defstruct(
     call_back_method: nil,
-    next_worker_name: nil,
     cluster_number: 0,
-    metadata: %{}
+    data_to_process: nil,
+    next_worker_name: nil,
   )
 
   def init({algo, n, cluster_number}) do
     state = %__MODULE__{
       call_back_method: call_back_method(algo),
-      next_worker_name: get_next_worker(cluster_number, n),
-      cluster_number: cluster_number
+      cluster_number: cluster_number,
+      data_to_process: Storage.call(:get_first_with_key, [cluster_number]),
+      next_worker_name: get_next_worker(cluster_number, n)
     }
     {:ok, state}
   end
 
   def handle_cast(:do_process, state) do
-    data = Storage.call(:get_first_with_key, [state.cluster_number])
-    local_dist = state.call_back_method.get_distance(data, state.metadata.centroid)
-    next_dist = GenServer.call(state.next_worker_name, {:calculate_dist, data})
-    new_state = maybe_move_data(data, state, local_dist > next_dist)
-    {:noreply, new_state}
-  end
-
-  def handle_call({:calculate_dist, data}, _from, state) do
-    dist = Algo.Kmean.get_distance(data, state.metadata.centroid)
-    {:reply, dist, state}
+    data       = data_to_process(state.data_to_process, state)
+    local_dist = calculate_dist(data, worker_name(state.cluster_number))
+    next_dist  = calculate_dist(data, state.next_worker_name)
+    maybe_move_data(data, state, local_dist > next_dist)
+    next_data  = Storage.next_with_key(data)
+    update_centroid(state)
+    {:noreply, %{state | data_to_process: next_data}}
   end
 
   def handle_call(:init_cluster, _from, state) do
-    dataset = Storage.call(:get_all_with_key, [state.cluster_number])
-    {:reply, :ok, %{state|metadata: state.call_back_method.init_metadata(dataset)}}
+    update_centroid(state)
+    {:reply, :ok, state}
   end
 
-  def handle_call({:take_over, data}, _from, state) do
-    dataset = GenServer.call(Storage, {:take_over, [data, state.cluster_number]})
-    {:reply, :ok, %{state|metadata: state.call_back_method.init_metadata(dataset)}}
+  def handle_cast({:take_over, data}, state) do
+    GenServer.call(Storage, {:take_over, [data, state.cluster_number]})
+    update_centroid(state)
+    {:noreply, state}
   end
 
-  defp maybe_move_data(data, state, false) do
-    Storage.call(:move_to_last, [{data, state.cluster_number}])
+  defp maybe_move_data(data, state, false), do: state
+  defp maybe_move_data(data, state, true) do
+    GenServer.cast(state.next_worker_name, {:take_over, data})
     state
   end
-  defp maybe_move_data(data, state, true) do
-    GenServer.call(state.next_worker_name, {:take_over, data})
-    new_dataset = Storage.call(:get_all_with_key, [state.cluster_number])
-    %{state|metadata: state.call_back_method.init_metadata(new_dataset)}
+
+  defp calculate_dist(data, worker_name) do
+    next_centroid = Storage.call(:get_centroid_by_worker_name, [worker_name])
+    Algo.Kmean.get_distance(data, next_centroid)
+  end
+
+  defp update_centroid(state) do
+    dataset = Storage.call(:get_all_with_key, [state.cluster_number])
+    centroid = apply(state.call_back_method, :calculate_centroid, [dataset])
+    Storage.call(:update_centroid, [worker_name(state.cluster_number), centroid])
   end
 
   defp call_back_method(:kmean), do: Algo.Kmean
   defp call_back_method(_), do: Algo.Default
 
+  defp worker_name(n), do: {:global, {:cluster, n}}
+
   defp get_next_worker(n, n), do: {:global, {:cluster, 1}}
   defp get_next_worker(n, _), do: {:global, {:cluster, n + 1}}
+
+  defp data_to_process(data = {_, _}, _), do: data
+  defp data_to_process(_, state), do: Storage.call(:get_first_with_key, [state.cluster_number])
 
 end

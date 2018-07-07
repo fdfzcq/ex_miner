@@ -1,49 +1,47 @@
 defmodule ExMiner.Cluster.Storage do
   use GenServer
+  alias ExMiner.Cluster.Mnesia
+
+  @dataset_table_name :dataset
+  @centroid_table_name :centroid
 
   # dummy storage by using simple map values
   # TODO maybe use disk based storage
+  @table_name 
 
   def start(dataset), do: GenServer.start_link(__MODULE__, dataset, name: __MODULE__)
 
   def init(dataset) do
-    {:ok, dataset}
+    Mnesia.init()
+    init_with_dataset(dataset)
+    {:ok, :foo}
   end
 
   def call(func, args\\[]), do: GenServer.call(__MODULE__, {func, args}) 
 
   def handle_call({func, args}, _from, state) do
-    {res, new_state} = apply(__MODULE__, func, [state|args])
-    {:reply, res, new_state}
+    res = apply(__MODULE__, func, args)
+    {:reply, res, state}
   end
 
-  def get_all(state), do: {state, state}
+  def get_all(state), do: Mnesia.get_all(@dataset_table_name)
 
-  def get_all_with_key(state, key), do: {get_all_with_key(state, key, []), state}
-  defp get_all_with_key([], _key, list), do: :lists.reverse(list)
-  defp get_all_with_key([{data, key}|t], key, list), do: get_all_with_key(t, key, [data|list])
-  defp get_all_with_key([_|t], key, list), do: get_all_with_key(t, key, list)
+  def get_all_with_key(key), do: Mnesia.get_keys_by_value(@dataset_table_name, key)
 
-  def get_first_with_key(state, key), do: {get_first_with_key(state, key, nil), state}
-  defp get_first_with_key([], _key, nil), do: nil
-  defp get_first_with_key([{data, key}|_], key, nil), do: data
-  defp get_first_with_key([_|t], key, nil), do: get_first_with_key(t, key, nil)
+  def get_first_with_key(key), do: Enum.at(Mnesia.get_keys_by_value(@dataset_table_name, key), 0)
 
-  def move_to_last(state, data), do: {:ok, move_to_last(state, data, [], false)}
-  defp move_to_last([], data, new_list, true) do
-    :lists.reverse([data|new_list])
-  end
-  defp move_to_last([], data, new_list, false), do: new_list
-  defp move_to_last([data|t], data, new_list, has_data?), do: move_to_last(t, data, new_list, true)
-  defp move_to_last([v|t], data, new_list, has_data?), do: move_to_last(t, data, [v|new_list], has_data?)
+  def next_with_key({data, key}), do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, key)
 
-  def take_over(state, data, new_group) do
-    l = take_over(state, data, new_group, [])
-    {res, _} = get_all_with_key(l, new_group)
-    {res, l}
-  end
-  defp take_over([], _data, _new_group, new_list), do: :lists.reverse(new_list)
-  defp take_over([{data, _}|t], data, new_group, new_list), do:
-    take_over(t, data, new_group, [{data, new_group}|new_list])
-  defp take_over([h|t], data, new_group, new_list), do: take_over(t, data, new_group, [h|new_list])
+  def get_centroid_by_worker_name(worker_name), do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
+
+  def update_centroid(worker_name, centroid), do: Mnesia.put(@centroid_table_name, worker_name, centroid)
+
+  defp next_with_key([], _data, _key), do: nil
+  defp next_with_key([{data, key}|t], data, key), do: next_with_key(t, data, key)
+  defp next_with_key([{next, key}|_t], _data, key), do: next
+  defp next_with_key([_|t], data, key), do: next_with_key(t, data, key)
+
+  def take_over(state, data, new_group), do: Mnesia.put(@dataset_table_name, data, new_group)
+
+  def init_with_dataset(dataset), do: Mnesia.put_all(@dataset_table_name, dataset)
 end
