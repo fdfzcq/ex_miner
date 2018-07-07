@@ -1,9 +1,5 @@
 defmodule ExMiner.State do
-
-  defstruct(
-      values: []
-    )
+  defstruct(values: [])
 
   def new(), do: %__MODULE__{}
-
 end

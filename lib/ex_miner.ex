@@ -12,29 +12,28 @@ defmodule ExMiner do
 
     cowboy_options = %{
       comress: true,
-      timeout: 30_000,
+      timeout: 30_000
     }
 
     {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
-    #__MODULE__.start_link()
+    # __MODULE__.start_link()
   end
-
 
   ##### deprecated
 
   def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 
   def init([]) do
-    pid = Explot.new
+    pid = Explot.new()
     {:ok, pid}
   end
 
-  def plot(values, opts\\%{}) do
+  def plot(values, opts \\ %{}) do
     :ok = GenServer.call(__MODULE__, {:plot, values, opts})
     GenServer.call(__MODULE__, :show)
   end
 
-  def kmean(cluster, opts\\%{}) do
+  def kmean(cluster, opts \\ %{}) do
     :kmean = GenServer.call(__MODULE__, {:plot, cluster, :kmean, opts}, :infinity)
     GenServer.call(__MODULE__, :show, :infinity)
   end
@@ -66,17 +65,21 @@ defmodule ExMiner do
     {:reply, :ok, nil}
   end
 
-  defp plotted?(nil), do: Explot.new
+  defp plotted?(nil), do: Explot.new()
   defp plotted?(pid), do: pid
 
-  defp do_plot(values, plot, options\\%{}) do
-    {x_list, y_list} = values
-                       |> Enum.reduce({[],[]},
-                            fn({x, y}, {xs, ys}) ->
-                                  {[x|xs], [y|ys]} end)
+  defp do_plot(values, plot, options \\ %{}) do
+    {x_list, y_list} =
+      values
+      |> Enum.reduce({[], []}, fn {x, y}, {xs, ys} ->
+        {[x | xs], [y | ys]}
+      end)
+
     color = options |> Map.get(:color, 'ro')
-    command = "plot([" <> Enum.join(x_list, ",") <> "],[" <> Enum.join(y_list, ",") <> "],'#{color}')"
+
+    command =
+      "plot([" <> Enum.join(x_list, ",") <> "],[" <> Enum.join(y_list, ",") <> "],'#{color}')"
+
     Explot.plot_command(plot, command)
   end
-
 end

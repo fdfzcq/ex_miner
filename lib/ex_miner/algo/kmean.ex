@@ -1,16 +1,16 @@
 defmodule ExMiner.Algo.Kmean do
   @behaviour ExMiner.Algo.Default
 
-  defstruct(
-    centroid: nil
-  )
+  defstruct(centroid: nil)
 
   def calculate_centroid(dataset) do
     n = Enum.count(dataset)
-    {x_sum, y_sum} = dataset
-                     |> Enum.reduce({0, 0},
-                        fn({x, y}, {xs, ys}) -> {xs + x, ys + y} end)
-    {div(10 * x_sum, n)/10, div(10 * y_sum, n)/10}
+
+    {x_sum, y_sum} =
+      dataset
+      |> Enum.reduce({0, 0}, fn {x, y}, {xs, ys} -> {xs + x, ys + y} end)
+
+    {div(10 * x_sum, n) / 10, div(10 * y_sum, n) / 10}
   end
 
   def get_distance({x1, y1}, {x2, y2}) do

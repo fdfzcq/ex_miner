@@ -7,7 +7,7 @@ defmodule ExMiner.Cluster.Storage do
 
   # dummy storage by using simple map values
   # TODO maybe use disk based storage
-  @table_name 
+  @table_name
 
   def start(dataset), do: GenServer.start_link(__MODULE__, dataset, name: __MODULE__)
 
@@ -17,7 +17,7 @@ defmodule ExMiner.Cluster.Storage do
     {:ok, :foo}
   end
 
-  def call(func, args\\[]), do: GenServer.call(__MODULE__, {func, args}) 
+  def call(func, args \\ []), do: GenServer.call(__MODULE__, {func, args})
 
   def handle_call({func, args}, _from, state) do
     res = apply(__MODULE__, func, args)
@@ -30,16 +30,19 @@ defmodule ExMiner.Cluster.Storage do
 
   def get_first_with_key(key), do: Enum.at(Mnesia.get_keys_by_value(@dataset_table_name, key), 0)
 
-  def next_with_key({data, key}), do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, key)
+  def next_with_key({data, key}),
+    do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, key)
 
-  def get_centroid_by_worker_name(worker_name), do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
+  def get_centroid_by_worker_name(worker_name),
+    do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
 
-  def update_centroid(worker_name, centroid), do: Mnesia.put(@centroid_table_name, worker_name, centroid)
+  def update_centroid(worker_name, centroid),
+    do: Mnesia.put(@centroid_table_name, worker_name, centroid)
 
   defp next_with_key([], _data, _key), do: nil
-  defp next_with_key([{data, key}|t], data, key), do: next_with_key(t, data, key)
-  defp next_with_key([{next, key}|_t], _data, key), do: next
-  defp next_with_key([_|t], data, key), do: next_with_key(t, data, key)
+  defp next_with_key([{data, key} | t], data, key), do: next_with_key(t, data, key)
+  defp next_with_key([{next, key} | _t], _data, key), do: next
+  defp next_with_key([_ | t], data, key), do: next_with_key(t, data, key)
 
   def take_over(state, data, new_group), do: Mnesia.put(@dataset_table_name, data, new_group)
 

@@ -7,7 +7,7 @@ defmodule ExMiner.Cluster.Worker do
     call_back_method: nil,
     cluster_number: 0,
     data_to_process: nil,
-    next_worker_name: nil,
+    next_worker_name: nil
   )
 
   def init({algo, n, cluster_number}) do
@@ -17,15 +17,16 @@ defmodule ExMiner.Cluster.Worker do
       data_to_process: Storage.call(:get_first_with_key, [cluster_number]),
       next_worker_name: get_next_worker(cluster_number, n)
     }
+
     {:ok, state}
   end
 
   def handle_cast(:do_process, state) do
-    data       = data_to_process(state.data_to_process, state)
+    data = data_to_process(state.data_to_process, state)
     local_dist = calculate_dist(data, worker_name(state.cluster_number))
-    next_dist  = calculate_dist(data, state.next_worker_name)
+    next_dist = calculate_dist(data, state.next_worker_name)
     maybe_move_data(data, state, local_dist > next_dist)
-    next_data  = Storage.next_with_key(data)
+    next_data = Storage.next_with_key(data)
     update_centroid(state)
     {:noreply, %{state | data_to_process: next_data}}
   end
@@ -42,6 +43,7 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   defp maybe_move_data(data, state, false), do: state
+
   defp maybe_move_data(data, state, true) do
     GenServer.cast(state.next_worker_name, {:take_over, data})
     state
@@ -68,5 +70,4 @@ defmodule ExMiner.Cluster.Worker do
 
   defp data_to_process(data = {_, _}, _), do: data
   defp data_to_process(_, state), do: Storage.call(:get_first_with_key, [state.cluster_number])
-
 end
