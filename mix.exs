@@ -15,7 +15,7 @@ defmodule ExMiner.Mixfile do
   def application do
     [
       mod: {ExMiner, []},
-      applications: [:explot, :cowboy]
+      applications: [:explot, :cowboy, :amqp]
     ]
   end
 
@@ -24,7 +24,8 @@ defmodule ExMiner.Mixfile do
     [
       {:cowboy, git: "https://github.com/ninenines/cowboy.git", tag: "2.1.0", override: true},
       {:ranch, git: "https://github.com/ninenines/ranch", tag: "1.4.0", override: true},
-      {:explot, "~> 0.1.0"}
+      {:explot, "~> 0.1.0"},
+      {:amqp, "~> 1.0"}
     ]
   end
 end

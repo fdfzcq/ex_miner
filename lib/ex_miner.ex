@@ -4,10 +4,12 @@ defmodule ExMiner do
   """
   use GenServer
   alias ExMiner.Kmean
+  alias ExMiner.MessageHandler.MQ
 
   @port 8080
 
   def start(_type, _args) do
+    # TODO: API
     ranch_options = [{:port, @port}]
 
     cowboy_options = %{
@@ -16,10 +18,12 @@ defmodule ExMiner do
     }
 
     {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
+
+    MQ.start_link()
     # __MODULE__.start_link()
   end
 
-  ##### deprecated
+  ############################### deprecated ###################################
 
   def start_link(), do: GenServer.start_link(__MODULE__, [], name: __MODULE__)
 

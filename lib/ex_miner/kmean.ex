@@ -1,4 +1,6 @@
 defmodule ExMiner.Kmean do
+  # Deprecated
+
   defstruct(
     dist: 0.0,
     cluster: [],
