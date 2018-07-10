@@ -7,7 +7,8 @@ defmodule ExMiner.Cluster.Worker do
     call_back_method: nil,
     cluster_number: 0,
     data_to_process: nil,
-    next_worker_name: nil
+    next_worker_name: nil,
+    centroid: nil
   )
 
   def init({algo, n, cluster_number}) do
@@ -15,7 +16,8 @@ defmodule ExMiner.Cluster.Worker do
       call_back_method: call_back_method(algo),
       cluster_number: cluster_number,
       data_to_process: Storage.call(:get_first_with_key, [cluster_number]),
-      next_worker_name: get_next_worker(cluster_number, n)
+      next_worker_name: get_next_worker(cluster_number, n),
+      centroid: update_centroid(%{})
     }
 
     {:ok, state}
@@ -27,19 +29,19 @@ defmodule ExMiner.Cluster.Worker do
     next_dist = calculate_dist(data, state.next_worker_name)
     maybe_move_data(data, state, local_dist > next_dist)
     next_data = Storage.next_with_key(data)
-    update_centroid(state)
-    {:noreply, %{state | data_to_process: next_data}}
+    centroid = update_centroid(state)
+    {:noreply, %{state | data_to_process: next_data, centroid: centroid}}
   end
 
   def handle_call(:init_cluster, _from, state) do
-    update_centroid(state)
-    {:reply, :ok, state}
+    centroid = update_centroid(state)
+    {:reply, :ok, %{state | centroid: centroid}}
   end
 
   def handle_cast({:take_over, data}, state) do
     GenServer.call(Storage, {:take_over, [data, state.cluster_number]})
-    update_centroid(state)
-    {:noreply, state}
+    centroid = update_centroid(state)
+    {:noreply, %{state | centroid: centroid}}
   end
 
   defp maybe_move_data(data, state, false), do: state
@@ -57,7 +59,11 @@ defmodule ExMiner.Cluster.Worker do
   defp update_centroid(state) do
     dataset = Storage.call(:get_all_with_key, [state.cluster_number])
     centroid = apply(state.call_back_method, :calculate_centroid, [dataset])
-    Storage.call(:update_centroid, [worker_name(state.cluster_number), centroid])
+    case centroid == state.centroid do
+      true -> :ok
+      false -> Storage.call(:update_centroid, [worker_name(state.cluster_number), centroid])
+    end
+    centroid
   end
 
   defp call_back_method(:kmean), do: Algo.Kmean

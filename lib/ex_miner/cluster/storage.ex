@@ -1,6 +1,7 @@
 defmodule ExMiner.Cluster.Storage do
   use GenServer
   alias ExMiner.Cluster.Mnesia
+  alias ExMiner.MessageHandler.MQ
 
   @dataset_table_name :dataset
   @centroid_table_name :centroid
@@ -36,15 +37,20 @@ defmodule ExMiner.Cluster.Storage do
   def get_centroid_by_worker_name(worker_name),
     do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
 
-  def update_centroid(worker_name, centroid),
-    do: Mnesia.put(@centroid_table_name, worker_name, centroid)
+  def update_centroid(worker_name, centroid) do
+    MQ.publish("centroid.#{worker_name}", centroid)
+    Mnesia.put(@centroid_table_name, worker_name, centroid)
+  end
 
   defp next_with_key([], _data, _key), do: nil
   defp next_with_key([{data, key} | t], data, key), do: next_with_key(t, data, key)
   defp next_with_key([{next, key} | _t], _data, key), do: next
   defp next_with_key([_ | t], data, key), do: next_with_key(t, data, key)
 
-  def take_over(state, data, new_group), do: Mnesia.put(@dataset_table_name, data, new_group)
+  def take_over(state, data, new_group) do
+    MQ.publish("data.#{new_group}", data)
+    Mnesia.put(@dataset_table_name, data, new_group)
+  end
 
   def init_with_dataset(dataset), do: Mnesia.put_all(@dataset_table_name, dataset)
 end
