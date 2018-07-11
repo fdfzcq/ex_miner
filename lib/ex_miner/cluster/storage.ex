@@ -8,7 +8,6 @@ defmodule ExMiner.Cluster.Storage do
 
   # dummy storage by using simple map values
   # TODO maybe use disk based storage
-  @table_name
 
   def start(dataset), do: GenServer.start_link(__MODULE__, dataset, name: __MODULE__)
 
@@ -25,7 +24,7 @@ defmodule ExMiner.Cluster.Storage do
     {:reply, res, state}
   end
 
-  def get_all(state), do: Mnesia.get_all(@dataset_table_name)
+  def get_all(_state), do: Mnesia.get_all(@dataset_table_name)
 
   def get_all_with_key(key), do: Mnesia.get_keys_by_value(@dataset_table_name, key)
 
@@ -47,7 +46,7 @@ defmodule ExMiner.Cluster.Storage do
   defp next_with_key([{next, key} | _t], _data, key), do: next
   defp next_with_key([_ | t], data, key), do: next_with_key(t, data, key)
 
-  def take_over(state, data, new_group) do
+  def take_over(_state, data, new_group) do
     MQ.publish("data.#{new_group}", data)
     Mnesia.put(@dataset_table_name, data, new_group)
   end

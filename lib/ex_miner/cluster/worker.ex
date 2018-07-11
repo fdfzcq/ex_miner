@@ -33,18 +33,18 @@ defmodule ExMiner.Cluster.Worker do
     {:noreply, %{state | data_to_process: next_data, centroid: centroid}}
   end
 
-  def handle_call(:init_cluster, _from, state) do
-    centroid = update_centroid(state)
-    {:reply, :ok, %{state | centroid: centroid}}
-  end
-
   def handle_cast({:take_over, data}, state) do
     GenServer.call(Storage, {:take_over, [data, state.cluster_number]})
     centroid = update_centroid(state)
     {:noreply, %{state | centroid: centroid}}
   end
 
-  defp maybe_move_data(data, state, false), do: state
+  def handle_call(:init_cluster, _from, state) do
+    centroid = update_centroid(state)
+    {:reply, :ok, %{state | centroid: centroid}}
+  end
+
+  defp maybe_move_data(_data, state, false), do: state
 
   defp maybe_move_data(data, state, true) do
     GenServer.cast(state.next_worker_name, {:take_over, data})

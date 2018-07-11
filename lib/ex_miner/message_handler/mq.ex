@@ -1,5 +1,6 @@
 defmodule ExMiner.MessageHandler.MQ do
   use GenServer
+  use AMQP
 
   def start_link() do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
