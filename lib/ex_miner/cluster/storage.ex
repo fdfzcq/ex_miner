@@ -24,7 +24,7 @@ defmodule ExMiner.Cluster.Storage do
     {:reply, res, state}
   end
 
-  def get_all(_state), do: Mnesia.get_all(@dataset_table_name)
+  def get_all(), do: Mnesia.get_all(@dataset_table_name)
 
   def get_all_with_key(key), do: Mnesia.get_keys_by_value(@dataset_table_name, key)
 

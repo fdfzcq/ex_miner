@@ -9,18 +9,25 @@ defmodule ExMiner do
   @port 8080
 
   def start(_type, _args) do
-    # TODO: API
+
     ranch_options = [{:port, @port}]
 
+    dispatch = :cowboy_router.compile([{:'_', [{'/data', ExMiner.API, []}]}])
+
     cowboy_options = %{
+      env: %{dispatch: dispatch},
       comress: true,
       timeout: 30_000
     }
 
     {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
 
-    MQ.start_link()
-    # __MODULE__.start_link()
+    #MQ.start_link()
+  end
+
+  def start() do
+    dataset = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
+    ExMiner.Cluster.WorkerRegistry.start(3, :kmean, dataset)
   end
 
   ############################### deprecated ###################################
