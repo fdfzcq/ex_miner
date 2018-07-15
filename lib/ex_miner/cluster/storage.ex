@@ -37,7 +37,7 @@ defmodule ExMiner.Cluster.Storage do
     do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
 
   def update_centroid(worker_name, centroid) do
-    MQ.publish("centroid.#{worker_name}", centroid)
+    #MQ.publish("centroid.#{worker_name}", centroid)
     Mnesia.put(@centroid_table_name, worker_name, centroid)
   end
 
@@ -46,8 +46,8 @@ defmodule ExMiner.Cluster.Storage do
   defp next_with_key([{next, key} | _t], _data, key), do: next
   defp next_with_key([_ | t], data, key), do: next_with_key(t, data, key)
 
-  def take_over(_state, data, new_group) do
-    MQ.publish("data.#{new_group}", data)
+  def take_over(data, new_group) do
+    #MQ.publish("data.#{new_group}", data)
     Mnesia.put(@dataset_table_name, data, new_group)
   end
 

@@ -16,11 +16,9 @@ defmodule ExMiner.Cluster.Worker do
       call_back_method: call_back_method(algo),
       cluster_number: cluster_number,
       data_to_process: Storage.call(:get_first_with_key, [cluster_number]),
-      next_worker_name: get_next_worker(cluster_number, n),
-      centroid: update_centroid(%{})
+      next_worker_name: get_next_worker(cluster_number, n)
     }
-
-    {:ok, state}
+    {:ok, %{state | centroid: update_centroid(state)}}
   end
 
   def handle_cast(:do_process, state) do
