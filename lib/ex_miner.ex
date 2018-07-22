@@ -5,6 +5,7 @@ defmodule ExMiner do
   use GenServer
   alias ExMiner.Kmean
   alias ExMiner.MessageHandler.MQ
+  alias ExMiner.Cluster.{Scheduler, WorkerRegistry}
 
   @port 8080
 
@@ -26,8 +27,10 @@ defmodule ExMiner do
   end
 
   def start() do
+    Scheduler.start(:job_scheduler)
     dataset = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
-    ExMiner.Cluster.WorkerRegistry.start(3, :kmean, dataset)
+    WorkerRegistry.start(3, :kmean, dataset)
+    Scheduler.schedule(:job_scheduler, {WorkerRegistry, :start_process, [3, :kmean]}, 5_000)
   end
 
   ############################### deprecated ###################################
