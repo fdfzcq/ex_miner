@@ -1,8 +1,4 @@
 defmodule ExMiner.Algo.Kmean do
-  @behaviour ExMiner.Algo.Default
-
-  defstruct(centroid: nil)
-
   def calculate_centroid(dataset) do
     n = Enum.count(dataset)
 

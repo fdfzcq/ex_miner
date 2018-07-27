@@ -5,8 +5,8 @@ defmodule ExMiner.Cluster.Scheduler do
 
   def init(_), do: {:ok, []}
 
-  def schedule(scheduler_name, repeat_args = {mod, func, args, interval}) do
-    pid = GenServer.call(__MODULE__, :whereis)
+  def schedule(scheduler_name, repeat_args = {_mod, _func, _args, interval}) do
+    pid = GenServer.call({:global, scheduler_name}, :whereis)
     Process.send_after(pid, {:repeat, repeat_args}, interval)
   end
 
@@ -18,7 +18,7 @@ defmodule ExMiner.Cluster.Scheduler do
     {:noreply, state}
   end
 
-  def terminate(:normal, _state) do
+  def terminate(:normal, state) do
     IO.puts "scheduler stopped"
     state
   end

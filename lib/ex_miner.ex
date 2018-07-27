@@ -4,23 +4,20 @@ defmodule ExMiner do
   """
   use GenServer
   alias ExMiner.Kmean
-  alias ExMiner.MessageHandler.MQ
   alias ExMiner.Cluster.{Scheduler, WorkerRegistry}
 
-  @port 8080
+  @port 8990
 
   def start(_type, _args) do
+    start()
 
     ranch_options = [{:port, @port}]
-
     dispatch = :cowboy_router.compile([{:'_', [{'/data', ExMiner.API, []}]}])
-
     cowboy_options = %{
       env: %{dispatch: dispatch},
       comress: true,
       timeout: 30_000
     }
-
     {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
 
     #MQ.start_link()
@@ -28,9 +25,9 @@ defmodule ExMiner do
 
   def start() do
     Scheduler.start(:job_scheduler)
-    dataset = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
+    dataset = (1..500) |> Enum.map(fn(_) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
     WorkerRegistry.start(3, :kmean, dataset)
-    Scheduler.schedule(:job_scheduler, {WorkerRegistry, :start_process, [3, :kmean]}, 5_000)
+    Scheduler.schedule(:job_scheduler, {WorkerRegistry, :start_process, [3, :kmean], 5_000})
   end
 
   ############################### deprecated ###################################
@@ -56,7 +53,7 @@ defmodule ExMiner do
   #   options =
   # end
 
-  def handle_call({:plot, values, opts}, _from, pid) do
+  def handle_call({:plot, values, _opts}, _from, pid) do
     plot = plotted?(pid)
     do_plot(values, plot)
     {:reply, :ok, plot}

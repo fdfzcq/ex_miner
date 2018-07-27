@@ -1,7 +1,7 @@
 defmodule ExMiner.Cluster.Storage do
   use GenServer
   alias ExMiner.Cluster.Mnesia
-  alias ExMiner.MessageHandler.MQ
+  # alias ExMiner.MessageHandler.MQ
 
   @dataset_table_name :dataset
   @centroid_table_name :centroid

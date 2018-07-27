@@ -1,11 +1,2 @@
-up:
-	docker-compose up -d
-
-down:
-	docker-compose down
-
-pull:
-	docker-compose pull 
-
-ps:
-	docker-compose ps
+docker-image:
+	docker build -t ex_miner .

@@ -1,7 +1,6 @@
 defmodule ExMiner.Cluster.WorkerRegistry do
   alias ExMiner.Cluster.Worker, as: ClusterWorker
   alias ExMiner.Cluster.Storage, as: ClusterStorage
-  use GenServer
 
   # start worker registry
 
@@ -9,7 +8,7 @@ defmodule ExMiner.Cluster.WorkerRegistry do
     Registry.start_link(keys: :unique, name: algo)
     start_storage(no_of_clusters, dataset)
     spawn_cluster(no_of_clusters, algo)
-    init_cluster(no_of_clusters, dataset, algo)
+    init_cluster(no_of_clusters, algo)
     start_process(no_of_clusters, algo)
   end
 
@@ -38,7 +37,7 @@ defmodule ExMiner.Cluster.WorkerRegistry do
     Registry.register(algo, cluster_number, pid)
   end
 
-  def init_cluster(n, dataset, algo) do
+  def init_cluster(n, algo) do
     keys = 1..n
     Enum.each(keys, &init_workers_with_data(&1, algo))
   end

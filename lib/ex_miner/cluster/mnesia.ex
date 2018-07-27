@@ -45,7 +45,7 @@ defmodule ExMiner.Cluster.Mnesia do
       end)
 
   def get_value_by_key(table_name, key) do
-    {:atomic, [{table_name, key, value}]} =
+    {:atomic, [{_table_name, _key, value}]} =
       :mnesia.transaction(fn ->
         :mnesia.read({table_name, key})
       end)
@@ -59,7 +59,7 @@ defmodule ExMiner.Cluster.Mnesia do
         :mnesia.match_object({table_name, :_, value})
       end)
 
-    Enum.map(results, fn {_, key, value} -> key end)
+    Enum.map(results, fn {_, key, _value} -> key end)
   end
 
   def get_all(table_name) do
