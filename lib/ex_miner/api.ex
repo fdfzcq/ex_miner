@@ -8,7 +8,9 @@ defmodule ExMiner.API do
 
   defp get_cluster_data(_body) do
     data = Storage.call(:get_all, [])
-    %{data: data}
+    %{data: format(data, [])}
   end
-  
+
+  defp format([], list), do: list
+  defp format([{{x, y}, cluster}|t], list), do: format(t, [[[x,y], cluster]|list])
 end
