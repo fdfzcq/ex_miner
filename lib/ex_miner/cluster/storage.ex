@@ -31,7 +31,7 @@ defmodule ExMiner.Cluster.Storage do
   def get_first_with_key(key), do: Enum.at(Mnesia.get_keys_by_value(@dataset_table_name, key), 0)
 
   def next_with_key({data, key}),
-    do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, key)
+    do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, false)
 
   def get_centroid_by_worker_name(worker_name),
     do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
@@ -41,10 +41,10 @@ defmodule ExMiner.Cluster.Storage do
     Mnesia.put(@centroid_table_name, worker_name, centroid)
   end
 
-  defp next_with_key([], _data, _key), do: nil
-  defp next_with_key([{data, key} | t], data, key), do: next_with_key(t, data, key)
-  defp next_with_key([{next, key} | _t], _data, key), do: next
-  defp next_with_key([_ | t], data, key), do: next_with_key(t, data, key)
+  defp next_with_key([], _data, _), do: nil
+  defp next_with_key([data|t], data, false), do: next_with_key(t, data, true)
+  defp next_with_key([next|_t], _data, true), do: next
+  defp next_with_key([_|t], data, false), do: next_with_key(t, data, false)
 
   def take_over(data, new_group) do
     #MQ.publish("data.#{new_group}", data)

@@ -22,11 +22,12 @@ defmodule ExMiner.Cluster.Worker do
   end
 
   def handle_cast(:do_process, state) do
+    IO.puts("Worked #{state.cluster_number} start processing data #{inspect state.data_to_process}")
     data = data_to_process(state.data_to_process, state)
     local_dist = calculate_dist(data, worker_name(state.cluster_number))
     next_dist = calculate_dist(data, state.next_worker_name)
     maybe_move_data(data, state, local_dist > next_dist)
-    next_data = Storage.next_with_key(data)
+    next_data = Storage.call(:next_with_key, [{data, state.cluster_number}])
     centroid = update_centroid(state)
     {:noreply, %{state | data_to_process: next_data, centroid: centroid}}
   end

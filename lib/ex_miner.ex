@@ -27,7 +27,7 @@ defmodule ExMiner do
     Scheduler.start(:job_scheduler)
     dataset = (1..500) |> Enum.map(fn(_) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
     WorkerRegistry.start(3, :kmean, dataset)
-    Scheduler.schedule(:job_scheduler, {WorkerRegistry, :start_process, [3, :kmean], 5_000})
+    Scheduler.schedule(:job_scheduler, {ExMiner.Cluster.WorkerRegistry, :start_process, [3, :kmean], 500})
   end
 
   ############################### deprecated ###################################
