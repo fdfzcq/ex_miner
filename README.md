@@ -1,5 +1,25 @@
 # ExMiner
 
+A tool used for dynamically clustering datasets, currently only supports kmean algorithm.
+
+Clusters can be visualised by using [ex_miner_frontend](https://github.com/fdfzcq/ex_miner_frontend)
+
+To run the program locally:
+
+If you have Elixir installed, simply do, but remember to remove the Mnesia table each time:
+
+```bash
+iex -S mix
+```
+
+If you are a docker player, do:
+
+```bash
+make run-docker
+```
+
+# Deprecated Version and Documentation (code not removed yet):
+
 A dummy data clustering tool using explot.
 
 Read more on [explot](https://github.com/JordiPolo/explot) if you don't have python3/matplotlib installed.
