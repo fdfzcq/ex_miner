@@ -28,7 +28,7 @@ Default port: 8990
 
 ```
 /clusterData: start generating dataset and grouping data into clusters
-
+```
 response: {success: true} | error
 
 options:
@@ -37,12 +37,10 @@ options:
 - {data_range: int()} range of data values starting from 0, default by 1000
 - {cluster_interval: milliseconds()} processing interval, each cluster will start processing the next data after these many milliseconds
 - {algorithm: algorithm()} currently only supports kmean
-```
-
 
 ```
 /getData: get all data
-
+```
 response example: {data: [[[1, 2], 1], [[2, 3], 2]]} #{data: [[[x, y], group], ...]}
 
 options:
@@ -51,4 +49,3 @@ options:
 - {data_range: int()} range of data values starting from 0, default by 1000
 - {cluster_interval: milliseconds()} processing interval, each cluster will start processing the next data after these many milliseconds
 - {method: methods()} currently only support kmean
-```
