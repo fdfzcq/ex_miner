@@ -7,7 +7,7 @@ defmodule ExMiner.Cluster.Worker do
     call_back_method: nil,
     cluster_number: 0,
     data_to_process: nil,
-    next_worker_name: nil,
+    n_of_clusters: 0,
     centroid: nil
   )
 
@@ -15,18 +15,18 @@ defmodule ExMiner.Cluster.Worker do
     state = %__MODULE__{
       call_back_method: call_back_method(algo),
       cluster_number: cluster_number,
-      data_to_process: Storage.call(:get_first_with_key, [cluster_number]),
-      next_worker_name: get_next_worker(cluster_number, n)
+      n_of_clusters: n,
+      data_to_process: Storage.call(:get_first_with_key, [cluster_number])
     }
     {:ok, %{state | centroid: update_centroid(state)}}
   end
 
   def handle_cast(:do_process, state) do
-    IO.puts("Worked #{state.cluster_number} start processing data #{inspect state.data_to_process}")
+    IO.puts("Worker #{state.cluster_number} start processing data #{inspect state.data_to_process}")
     data = data_to_process(state.data_to_process, state)
     local_dist = calculate_dist(data, worker_name(state.cluster_number))
-    next_dist = calculate_dist(data, state.next_worker_name)
-    maybe_move_data(data, state, local_dist > next_dist)
+    dest_cluster = calculate_dest_cluster(state, data, local_dist)
+    move_data(data, state, dest_cluster)
     next_data = Storage.call(:next_with_key, [{data, state.cluster_number}])
     centroid = update_centroid(state)
     {:noreply, %{state | data_to_process: next_data, centroid: centroid}}
@@ -43,10 +43,22 @@ defmodule ExMiner.Cluster.Worker do
     {:reply, :ok, %{state | centroid: centroid}}
   end
 
-  defp maybe_move_data(_data, state, false), do: state
+  defp calculate_dest_cluster(state, data, local_dist), do:
+    calculate_dest_cluster(state, data, get_next_worker(state.cluster_number, state.n_of_clusters), local_dist)
 
-  defp maybe_move_data(data, state, true) do
-    GenServer.cast(state.next_worker_name, {:take_over, data})
+  defp calculate_dest_cluster(%{cluster_number: n}, data, worker = {:global, {:cluster, n}}, _), do:
+    worker
+  defp calculate_dest_cluster(state, data, next_worker = {:global, {:cluster, n}}, local_dist) do
+    next_dist = calculate_dist(data, next_worker)
+    case next_dist < local_dist do
+      true -> next_worker
+      false -> calculate_dest_cluster(state, data, get_next_worker(n, state.n_of_clusters), local_dist)
+    end
+  end
+
+  defp move_data(_data, state = %{cluster_number: n}, {:global, {:cluster, n}}), do: state
+  defp move_data(data, state, worker) do
+    GenServer.cast(worker, {:take_over, data})
     state
   end
 

@@ -40,7 +40,7 @@ defmodule ExMiner.Cluster.Storage do
   end
 
   defp next_with_key([], _data, []), do: nil
-  defp next_with_key([], _data, [h|_t]), do: h
+  defp next_with_key([], _data, l), do: Enum.at(l, -1)
   defp next_with_key([data|t], data, l), do: next_with_key(t, data, [data|l])
   defp next_with_key([next|_t], data, [data|_l]), do: next
   defp next_with_key([h|t], data, l), do: next_with_key(t, data, [h|l])
