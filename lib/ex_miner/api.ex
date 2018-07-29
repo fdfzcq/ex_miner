@@ -1,22 +1,36 @@
 defmodule ExMiner.API do
-  alias ExMiner.Cluster.Storage
-  def init(req, state) do
-    response = get_cluster_data(req)
-    req = set_resp_header(req)
-    new_req = :cowboy_req.reply(200, %{"content-type" => "application/json"}, Poison.encode!(response), req)
-    {:ok, new_req, state}
+  alias ExMiner.Util
+  @moduledoc """
+  API interface
+  """
+
+  @default_port 8990
+  @endpoints ~w(getData clusterData)
+
+  def start_link() do
+    ranch_options = [{:port, port()}]
+    dispatch = :cowboy_router.compile([{:'_', endpoints()}])
+    cowboy_options = %{
+      env: %{dispatch: dispatch},
+      comress: true,
+      timeout: 30_000
+    }
+    {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
   end
 
-  defp get_cluster_data(_body) do
-    data = Storage.call(:get_all, [])
-    %{data: format(data, [])}
+  def child_spec(_) do
+    Supervisor.Spec.worker(__MODULE__, [])
   end
 
-  defp set_resp_header(req) do
-    req = :cowboy_req.set_resp_header("access-control-allow-methods", "GET, OPTIONS", req)
-    :cowboy_req.set_resp_header("access-control-allow-origin", "*", req)
-  end
+  defp endpoints(), do: @endpoints
+    |> Enum.map(&to_endpoint/1)
 
-  defp format([], list), do: list
-  defp format([{{x, y}, cluster}|t], list), do: format(t, [[[x,y], cluster]|list])
+  defp to_endpoint(endpoint), do:
+    {
+      [?/|String.to_charlist(endpoint)],
+      String.to_atom("Elixir.ExMiner.API." <> Util.Str.capitalize(endpoint)),
+      []
+    }
+
+  defp port(), do: Application.get_env(:ex_miner, :api_port, @default_port)
 end

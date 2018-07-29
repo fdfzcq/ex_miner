@@ -4,13 +4,19 @@ defmodule ExMiner.Cluster.WorkerRegistry do
 
   # start worker registry
 
-  def start(no_of_clusters, algo, dataset) do
-    Registry.start_link(keys: :unique, name: algo)
+  def start(no_of_clusters, algo, dataset), do:
+    [keys: :unique, name: algo]
+    |> Registry.start_link()
+    |> start(no_of_clusters, algo, dataset)
+
+  defp start({:ok, _}, no_of_clusters, algo, dataset) do
     start_storage(no_of_clusters, dataset)
     spawn_cluster(no_of_clusters, algo)
     init_cluster(no_of_clusters, algo)
     start_process(no_of_clusters, algo)
+    :ok
   end
+  defp start(err, _, _, _), do: err
 
   # init worker with dataset
 
@@ -33,7 +39,6 @@ defmodule ExMiner.Cluster.WorkerRegistry do
         {algo, no_of_clusters, cluster_number},
         name: {:global, {:cluster, cluster_number}}
       )
-
     Registry.register(algo, cluster_number, pid)
   end
 

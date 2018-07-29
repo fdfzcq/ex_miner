@@ -1,7 +1,6 @@
 defmodule ExMiner.Cluster.Storage do
   use GenServer
   alias ExMiner.Cluster.Mnesia
-  # alias ExMiner.MessageHandler.MQ
 
   @dataset_table_name :dataset
   @centroid_table_name :centroid
@@ -31,23 +30,22 @@ defmodule ExMiner.Cluster.Storage do
   def get_first_with_key(key), do: Enum.at(Mnesia.get_keys_by_value(@dataset_table_name, key), 0)
 
   def next_with_key({data, key}),
-    do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, false)
+    do: next_with_key(Mnesia.get_keys_by_value(@dataset_table_name, key), data, [])
 
   def get_centroid_by_worker_name(worker_name),
     do: Mnesia.get_value_by_key(@centroid_table_name, worker_name)
 
   def update_centroid(worker_name, centroid) do
-    #MQ.publish("centroid.#{worker_name}", centroid)
     Mnesia.put(@centroid_table_name, worker_name, centroid)
   end
 
-  defp next_with_key([], _data, _), do: nil
-  defp next_with_key([data|t], data, false), do: next_with_key(t, data, true)
-  defp next_with_key([next|_t], _data, true), do: next
-  defp next_with_key([_|t], data, false), do: next_with_key(t, data, false)
+  defp next_with_key([], _data, []), do: nil
+  defp next_with_key([], _data, [h|_t]), do: h
+  defp next_with_key([data|t], data, l), do: next_with_key(t, data, [data|l])
+  defp next_with_key([next|_t], data, [data|_l]), do: next
+  defp next_with_key([h|t], data, l), do: next_with_key(t, data, [h|l])
 
   def take_over(data, new_group) do
-    #MQ.publish("data.#{new_group}", data)
     Mnesia.put(@dataset_table_name, data, new_group)
   end
 

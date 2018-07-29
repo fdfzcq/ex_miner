@@ -1,7 +1,7 @@
-defmodule ExMiner.Cluster.Scheduler do
+defmodule ExMiner.Scheduler do
   use GenServer
 
-  def start(scheduler_name), do: GenServer.start_link(__MODULE__, [], name: {:global, scheduler_name})
+  def start_link([scheduler_name]), do: GenServer.start_link(__MODULE__, [], name: {:global, scheduler_name})
 
   def init(_), do: {:ok, []}
 

@@ -2,61 +2,53 @@
 
 A tool used for dynamically clustering datasets, currently only supports kmean algorithm.
 
+## How ExMiner works
+
+In ExMiner, each data cluster is represented by a worked registered in a worker registry. While starting the program, data in the generated dataset is assigned equally into each cluster, the cluster will then do the necessary calculation, process the data one by one and ask the next worker in the pool to take over the data if the data belongs to that cluster. ExMiner is using Mnesia for storing processed dataset and the centroids (or other metadata) of each clusters. Currently ExMiner only supports kmean algorithm.
+
 Clusters can be visualised by using [ex_miner_frontend](https://github.com/fdfzcq/ex_miner_frontend)
 
 To run the program locally:
 
-If you have Elixir installed, simply do, but remember to remove the Mnesia table each time:
+If you have Elixir installed, simply run iex, but remember to remove the Mnesia table each time:
 
 ```bash
 iex -S mix
 ```
 
-If you are a docker player, do:
+If you are a docker player and prefer a clean sheet, do:
 
 ```bash
 make run-docker
 ```
 
-# Deprecated Version and Documentation (code not removed yet):
+## API endpoints:
 
-A dummy data clustering tool using explot.
+Default port: 8990
 
-Read more on [explot](https://github.com/JordiPolo/explot) if you don't have python3/matplotlib installed.
-
-## Usage
-
-To make two kmean clusters on a set of points [{1, 4}, {3, 5}, {6, 7}, {4, 6}], do:
-
-```elixir
-ExMiner.kmean([{1, 4}, {3, 5}, {6, 7}, {4, 6}])
 ```
-Or
+/clusterData: start generating dataset and grouping data into clusters
 
-```elixir
-list = (1..500) |> Enum.map(fn(n) -> {:rand.uniform(1000), :rand.uniform(1000)} end)
-ExMiner.kmean(list)
+response: {success: true} | error
+
+options:
+- {cluster_n: int()} number of data clusters, default by 3
+- {dataset_size: int()} size of dataset to group, default by 500
+- {data_range: int()} range of data values starting from 0, default by 1000
+- {cluster_interval: milliseconds()} processing interval, each cluster will start processing the next data after these many milliseconds
+- {algorithm: algorithm()} currently only supports kmean
 ```
 
-Sample output:
 
-![](sample.png?raw=true "sample")
-
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ex_miner` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:ex_miner, "~> 0.1.0"}
-  ]
-end
 ```
+/getData: get all data
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/ex_miner](https://hexdocs.pm/ex_miner).
+response example: {data: [[[1, 2], 1], [[2, 3], 2]]} #{data: [[[x, y], group], ...]}
 
+options:
+- {cluster_n: int()} number of data clusters, default by 3
+- {dataset_size: int()} size of dataset to group, default by 500
+- {data_range: int()} range of data values starting from 0, default by 1000
+- {cluster_interval: milliseconds()} processing interval, each cluster will start processing the next data after these many milliseconds
+- {method: methods()} currently only support kmean
+```
