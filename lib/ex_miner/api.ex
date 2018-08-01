@@ -12,7 +12,7 @@ defmodule ExMiner.API do
     dispatch = :cowboy_router.compile([{:'_', endpoints()}])
     cowboy_options = %{
       env: %{dispatch: dispatch},
-      comress: true,
+      compress: true,
       timeout: 30_000
     }
     {:ok, _} = :cowboy.start_clear(:http, ranch_options, cowboy_options)
